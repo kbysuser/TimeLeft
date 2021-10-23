@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Document</title>
+</head>
+<boby>
+    <div class="wrapper">
+        <header>
+            <h4>
+                カウントダウン
+            </h4>
+            <form id="from1">
+
+            </form>
+        </header>
+        <main>
+            <div id="tm_frame">
+
+                <div id="timeup_display" style="display:block" style="display:none;"> </div>
+                 <br>
+                <div id="duetime_display" style="display:block"> </div> <br>
+
+                <div id="tm_display" style="display:block"></div><br>
+                <input id="tm_inputH" class="tm_input" type="text" value="12">
+                :
+                <input id="tm_inputM" class="tm_input" type="text" value="00">
+                <!-- 秒の入力を非表示  -->
+                <!-- : -->
+                <input id="tm_inputS" class="tm_input" type="text" style="display:none;">
+
+                <br>
+                <button id="start_button">
+                    スタート
+                </button>
+                <button id="reset_button" style="display:none">
+                    リセット
+                </button>
+            </div>
+
+        </main>
+        <footer>
+            <font size="2">
+                全角数字も入力可。<br>
+            </font>
+            <font size="2">
+                Enterでスタートができます。<br>
+            </font>
+            <font size="2">
+                <br>
+            </font>
+            <font size="2">
+                <br>
+            </font>
+        </footer>
+    </div>
+</boby>
+<script>
+    let startButton = document.getElementById("start_button")
+    let tmDisplay = document.getElementById("tm_display")
+    let timeupDisplay = document.getElementById("timeup_display")
+    let dueTimeDisplay = document.getElementById("duetime_display")
+
+    let resetButton = document.getElementById("reset_button")
+    let isWorking = false
+    let isTimeup = false
+    let intervalId = 0
+    let interval = 100
+    let tmVal = 0
+    let tmSec = 0
+
+    /* スタートボタンが押された際、
+    入力欄の時間が変更されているかの判定に使う */
+    let prevTmInputSec = 0
+
+
+    tmDisplay.textContent = tmSec2TmStr(tmSec)
+    tmDisplay.setAttribute("style", "color:red;")
+    let tmInputH = document.getElementById("tm_inputH")
+    let tmInputM = document.getElementById("tm_inputM")
+    let tmInputS = document.getElementById("tm_inputS")
+    let timeNow = new Date()
+    let tmp = timeNow
+    tmp.setMinutes(timeNow.getMinutes()+1)
+    console.log(tmp.getHours())
+    console.log(tmp)
+    tmInputH.value=tmp.getHours()
+    tmInputM.value=tmp.getMinutes()
+
+    startButton.addEventListener("click", function (evt) {
+        evt.preventDefault()
+        workTimer(this)
+
+    })
+    function workTimer(elm) {
+        clearInterval(intervalId)
+        // TIME UP が表示されないようにする
+        timeupDisplay.innerText = " "
+        tmDisplay.setAttribute("style", "color:darkblue;")
+        let dueTime = getDueTime()
+        //◆ interval[ms] ごとに行う処理
+        intervalId = setInterval(function () {
+            timeNow = new Date()
+            //timeLeftVal はミリ秒単位
+            let timeLeftVal = dueTime - timeNow
+            let timeLeftSec = Math.round(timeLeftVal / 1000)
+            console.log("dueTime=" + dueTime)
+            tmDisplay.innerText = tmSec2TmStr(timeLeftSec)
+            dueTimeDisplay.innerText
+                = ("00" + dueTime.getHours()).slice(-2)
+                + ":"
+                + ("00" + dueTime.getMinutes()).slice(-2)
+                + "まで"
+            if (timeLeftVal <= 0) {
+                timeLeftVal =0
+                timeup(elm)
+            }
+        }, interval)
+        isWorking = true
+    }
+    function getDueTime() {
+        let tmInputArr
+            = new Array(tmInputH.value, tmInputM.value, tmInputS.value)
+        for (let i in tmInputArr) {
+            tmInputArr[i] = zenkakuNum2hankakuNum(tmInputArr[i])
+        }
+        let timeNow = new Date()
+        let dueTime = new Date()
+        dueTime.setHours(tmInputArr[0])
+        dueTime.setMinutes(tmInputArr[1])
+        dueTime.setSeconds(tmInputArr[2])
+        if (dueTime - timeNow < 0) {
+            console.log("aaaa")
+            dueTime.setDate(dueTime.getDate() + 1)
+        }
+        return dueTime
+
+    }
+
+    function timeup() {
+        timeupDisplay.innerText = "TIME UP"
+        tmDisplay.setAttribute("style", "color:red;")
+        // startButton.textContent = "リセット"
+        clearInterval(intervalId)
+        isWorking = false
+        isTimeup = true
+    }
+
+    // 秒をHH:MM:SS形式の文字列にする
+    function tmSec2TmStr(tmSec) {
+        tmSecH = ("000" + parseInt(tmSec / 3600)).slice(-2)
+        tmSecM = ("000" + parseInt(tmSec / 60) % 60).slice(-2)
+        tmSecS = ("000" + parseInt(tmSec) % 60).slice(-2)
+        tmStr = tmSecH + ":" + tmSecM + ":" + tmSecS + ""
+        return tmStr
+    }
+    // 全角数字を半角数字に置き返る
+    function zenkakuNum2hankakuNum(str) {
+        return str.replace(/[０-９]/g, function (s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
+        })
+    }
+    // ショートカットの実装
+    document.addEventListener("keydown", function (evt) {
+        if (evt.ctrlKey & evt.keyCode == 13) {
+            // resetButton.click()
+        }
+        else if (evt.keyCode == 13) {
+            startButton.click()
+        }
+    })
+
+
+
+</script>
+
+<style>
+    /* 10/16　実装 */
+    .tm_input {
+        width: 3rem;
+    }
+
+    
+    
+    #timeup_display {
+        display: block;
+        display: none;
+        color: red;
+        font-size:2rem;
+        height: 2rem;
+        
+    }
+    #duetime_display {
+        font-size: 1rem;
+        color: darkblue;
+        height: 1 rem;
+    }
+
+    #tm_display {
+        font-size: 2rem;
+        color: darkblue;
+        height: 2rem;
+    }
+
+    #start_button,
+    #reset_button {
+        color: blue;
+        margin: 1rem;
+        border: groove 3px blue;
+        border-radius: 10px;
+    }
+
+    header,
+    main,
+    footer {
+        width: clamp(200px, 50vw, 700px);
+        flex-basis: auto;
+        display: block;
+    }
+
+    header {
+        border: groove 3px cyan;
+        flex: 1;
+    }
+
+    main {
+        border: groove 3px blue;
+        flex: 0 3 auto;
+        /*  */
+        margin: 10px 0;
+    }
+
+    footer {
+        border: groove 3px green;
+        /* フッタを下にしようとするとリスト
+        が増えたときにかぶる */
+        /* position: absolute;
+        bottom: 0; */
+        flex: 1 0 auto;
+        /* display:box-sizing; */
+
+    }
+
+    div.wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        align-content: center;
+        justify-content: space-around;
+        /* width:clamp(200px,50vw,500px); */
+
+
+    }
+</style>
